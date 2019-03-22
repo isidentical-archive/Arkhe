@@ -24,6 +24,9 @@ class Operation(IntEnum):
     LT = 11
     GE = 12
     LE = 13
+    JEQ = 14
+    JNE = 15
+    NOP = 0xFFE
     HLT  = 0xFFF
 
 @dataclass
@@ -89,6 +92,18 @@ def jmp_backward(vm, instr):
     value = vm.registers[vm.get_next_8()]
     vm.counter -= value
 
+@VM.instr(Operation.JEQ)
+def jmp_ifeq(vm, instr):
+    value = vm.registers[vm.get_next_8()]
+    if vm._eqflag:
+        vm.counter = value
+
+@VM.instr(Operation.JNE)
+def jmp_ifne(vm, instr):
+    value = vm.registers[vm.get_next_8()]
+    if not vm._eqflag:
+        vm.counter = value
+                 
 @VM.instr(Operation.HLT)
 def hlt(vm, instr):
     raise HLT()

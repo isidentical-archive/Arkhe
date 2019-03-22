@@ -149,3 +149,23 @@ def test_vm_le():
     vm.registers[3] = 4
     vm.exc_instr()
     assert not vm._eqflag
+
+def test_vm_jeq():
+    code = [14, 0, 0, 0, 0xFFE, 0, 0, 0, 0xFFE, 0, 0, 0]
+    vm = Arkhe(code)
+    vm.registers[0] = 7
+    vm._eqflag = True
+    vm.exc_instr()
+    assert vm.counter == 7
+
+def test_vm_jne():
+    code = [15, 0, 0, 0, 0xFFE, 0, 0, 0, 0xFFE, 0, 0, 0]
+    vm = Arkhe(code)
+    vm.registers[0] = 7
+    vm._eqflag = True
+    vm.exc_instr()
+    assert vm.counter == 2
+    vm.counter = 0
+    vm._eqflag = False
+    vm.exc_instr()
+    assert vm.counter == 7
