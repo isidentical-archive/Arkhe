@@ -18,6 +18,12 @@ class Operation(IntEnum):
     JMP = 5
     JMPF = 6
     JPMB = 7
+    EQ = 8
+    NE = 9
+    GT = 10
+    LT = 11
+    GE = 12
+    LE = 13
     HLT  = 0xFFF
 
 @dataclass
@@ -57,6 +63,18 @@ def math(vm, instr):
     operand2 = vm.registers[vm.get_next_8()]
     vm.registers[vm.get_next_8()] = getattr(operator, instr.name.lower())(operand1, operand2)
     
+@VM.instr(Operation.EQ)
+@VM.instr(Operation.NE)
+@VM.instr(Operation.LE)
+@VM.instr(Operation.GE)
+@VM.instr(Operation.GT)
+@VM.instr(Operation.LT)
+def comparison(vm, instr):
+    operand1 = vm.registers[vm.get_next_8()]
+    operand2 = vm.registers[vm.get_next_8()]
+    vm._eqflag = getattr(operator, instr.name.lower())(operand1, operand2)
+    vm.get_next_8()
+    
 @VM.instr(Operation.JMP)
 def jmp(vm, instr):
     vm.counter = vm.registers[vm.get_next_8()]
@@ -70,7 +88,7 @@ def jmp_forward(vm, instr):
 def jmp_backward(vm, instr):
     value = vm.registers[vm.get_next_8()]
     vm.counter -= value
-    
+
 @VM.instr(Operation.HLT)
 def hlt(vm, instr):
     raise HLT()

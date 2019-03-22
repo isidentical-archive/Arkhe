@@ -21,9 +21,10 @@ class Arkhe:
 
         self.registers = Registers(32)
         self.counter = 0
-
+        self._eqflag = False
+        
         self.machine = VM(self)
-
+        
     def eval(self):
         eta = len(self.code)
         while self.counter < eta:

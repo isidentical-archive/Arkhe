@@ -71,3 +71,81 @@ def test_vm_jmpb():
     vm.exc_instr()
     vm.exc_instr()
     assert vm.counter == 0
+
+def test_vm_eq():
+    code = [8, 0, 1, 0, 8, 1, 2, 0]
+    vm = Arkhe(code)
+    vm.registers[0] = 5
+    vm.registers[1] = 5
+    vm.exc_instr()
+    assert vm._eqflag
+    vm.registers[2] = 10
+    vm.exc_instr()
+    assert not vm._eqflag
+
+def test_vm_ne():
+    code = [9, 0, 1, 0, 9, 1, 2, 0]
+    vm = Arkhe(code)
+    vm.registers[0] = 5
+    vm.registers[1] = 5
+    vm.exc_instr()
+    assert not vm._eqflag
+    vm.registers[2] = 10
+    vm.exc_instr()
+    assert vm._eqflag
+
+def test_vm_gt():
+    code = [10, 0, 1, 0, 10, 1, 2, 0, 10, 1, 3, 0]
+    vm = Arkhe(code)
+    vm.registers[0] = 5
+    vm.registers[1] = 5
+    vm.exc_instr()
+    assert not vm._eqflag
+    vm.registers[2] = 10
+    vm.exc_instr()
+    assert not vm._eqflag
+    vm.registers[3] = 4
+    vm.exc_instr()
+    assert vm._eqflag
+
+def test_vm_lt():
+    code = [11, 0, 1, 0, 11, 1, 2, 0, 11, 1, 3, 0]
+    vm = Arkhe(code)
+    vm.registers[0] = 5
+    vm.registers[1] = 5
+    vm.exc_instr()
+    assert not vm._eqflag
+    vm.registers[2] = 10
+    vm.exc_instr()
+    assert vm._eqflag
+    vm.registers[3] = 4
+    vm.exc_instr()
+    assert not vm._eqflag
+
+def test_vm_ge():
+    code = [12, 0, 1, 0, 12, 1, 2, 0, 12, 1, 3, 0]
+    vm = Arkhe(code)
+    vm.registers[0] = 5
+    vm.registers[1] = 5
+    vm.exc_instr()
+    assert vm._eqflag
+    vm.registers[2] = 10
+    vm.exc_instr()
+    assert not vm._eqflag
+    vm.registers[3] = 4
+    vm.exc_instr()
+    assert vm._eqflag
+
+def test_vm_le():
+    code = [13, 0, 1, 0, 13, 1, 2, 0, 13, 1, 3, 0]
+    vm = Arkhe(code)
+    vm.registers[0] = 5
+    vm.registers[1] = 5
+    vm.exc_instr()
+    assert vm._eqflag
+    vm.registers[2] = 10
+    vm.exc_instr()
+    assert vm._eqflag
+    vm.registers[3] = 4
+    vm.exc_instr()
+    assert not vm._eqflag
