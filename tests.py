@@ -1,5 +1,5 @@
 import pytest
-from arkhe import Arkhe, Registers, RegisterNotFound
+from arkhe.arkhe import Arkhe, Registers, RegisterNotFound
 
 def test_registers():
     registers = Registers(32)

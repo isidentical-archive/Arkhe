@@ -1,0 +1,9 @@
+start: instr+
+instr: OP OPERAND OPERAND OPERAND
+
+OPERAND: HEXDIGIT~2
+
+%import common.HEXDIGIT
+%import common.CNAME -> OP
+%import common.WS
+%ignore WS

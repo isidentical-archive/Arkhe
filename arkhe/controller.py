@@ -1,6 +1,6 @@
 import itertools
 from collections import UserDict
-from vm import VM, Operation, ArkheException
+from arkhe.vm import VM, Operation, ArkheException
 
 class RegisterNotFound(ArkheException):
     pass

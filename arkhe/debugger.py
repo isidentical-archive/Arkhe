@@ -1,10 +1,10 @@
-from arkhe import Arkhe
-from functools import partial
+from arkhe.controller import Arkhe
+from arkhe.lang.compiler import Parser, ParseError
 
-b16 = partial(int, base=16)
 class ADB:
     def __init__(self):
         self.vm = Arkhe([])
+        self.parse = Parser()
         self.history = []
         
     def run(self, ps1 = ">>> "):
@@ -29,14 +29,16 @@ class ADB:
                 print(f"\tFree: {len(frees)}")
                 for reg, val in useds:
                     print(f"r{reg} = {val}")
+            elif command.startswith("r") and command[1:].isnumeric():
+                reg = command[1:]
+                print(f"r{reg} = {self.vm.registers[int(reg)]}")
             else:
-                commands = command.split(" ")
                 try:
-                    commands = map(b16, commands)
-                except ValueError:
-                    print(f"Given commands couldn't converted to base-10 from base-16.")
-                self.vm.code.extend(commands)
-                self.vm.exc_instr()
+                    commands = self.parse(command)
+                    self.vm.code.extend(commands)
+                    self.vm.exc_instr()
+                except ParseError:
+                    print("Last instruction couldn't parsed!")
                 
             self.history.append(command)
             command = input(ps1).strip()
