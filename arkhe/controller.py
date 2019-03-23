@@ -2,8 +2,10 @@ import itertools
 from collections import UserDict, UserList
 from arkhe.vm import VM, Operation, ArkheException
 
+
 class RegisterNotFound(ArkheException):
     pass
+
 
 class Registers(UserDict):
     def __init__(self, amount=32):
@@ -14,10 +16,12 @@ class Registers(UserDict):
             raise RegisterNotFound(f"{register}")
         return super().__setitem__(register, value)
 
+
 class Memory(UserList):
     def alloc(self, amount):
         self.data.extend(itertools.repeat(0, amount))
-        
+
+
 class Arkhe:
     def __init__(self, code):
         self.code = code
@@ -26,14 +30,14 @@ class Arkhe:
         self.counter = 0
         self.memory = Memory()
         self._eqflag = False
-        
+
         self.machine = VM(self)
-        
+
     def eval(self):
         eta = len(self.code)
         while self.counter < eta:
             self.exc_instr()
-            
+
     def exc_instr(self):
         return self.machine.dispatch(self.next_instr())
 
@@ -51,6 +55,6 @@ class Arkhe:
         res = (self.code[self.counter] << 8) | self.code[self.counter + 1]
         self.counter += 2
         return res
-    
+
     def __repr__(self):
         return f"Arkhe at {self.counter}"

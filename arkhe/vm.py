@@ -2,12 +2,15 @@ import operator
 from enum import IntEnum
 from dataclasses import dataclass
 
+
 class ArkheException(Exception):
     pass
-    
+
+
 class HLT(ArkheException):
     def __init__(self):
         super().__init__("Program stopped!")
+
 
 class Operation(IntEnum):
     LOAD = 0
@@ -29,7 +32,8 @@ class Operation(IntEnum):
     ALLOC = 16
     DEALLOC = 17
     NOP = 0xFFE
-    HLT  = 0xFFF
+    HLT = 0xFFF
+
 
 @dataclass
 class Instr:
@@ -58,7 +62,8 @@ class VM:
 def load(vm, instr):
     target = vm.get_next_8()
     vm.registers[target] = vm.get_next_16()
-    
+
+
 @VM.instr(Operation.ADD)
 @VM.instr(Operation.SUB)
 @VM.instr(Operation.MUL)
@@ -66,8 +71,11 @@ def load(vm, instr):
 def math(vm, instr):
     operand1 = vm.registers[vm.get_next_8()]
     operand2 = vm.registers[vm.get_next_8()]
-    vm.registers[vm.get_next_8()] = getattr(operator, instr.name.lower())(operand1, operand2)
-    
+    vm.registers[vm.get_next_8()] = getattr(operator, instr.name.lower())(
+        operand1, operand2
+    )
+
+
 @VM.instr(Operation.EQ)
 @VM.instr(Operation.NE)
 @VM.instr(Operation.LE)
@@ -79,20 +87,24 @@ def comparison(vm, instr):
     operand2 = vm.registers[vm.get_next_8()]
     vm._eqflag = getattr(operator, instr.name.lower())(operand1, operand2)
     vm.get_next_8()
-    
+
+
 @VM.instr(Operation.JMP)
 def jmp(vm, instr):
     vm.counter = vm.registers[vm.get_next_8()]
-    
+
+
 @VM.instr(Operation.JMPF)
 def jmp_forward(vm, instr):
     value = vm.registers[vm.get_next_8()]
     vm.counter += value
-        
+
+
 @VM.instr(Operation.JPMB)
 def jmp_backward(vm, instr):
     value = vm.registers[vm.get_next_8()]
     vm.counter -= value
+
 
 @VM.instr(Operation.JEQ)
 def jmp_ifeq(vm, instr):
@@ -100,17 +112,20 @@ def jmp_ifeq(vm, instr):
     if vm._eqflag:
         vm.counter = value
 
+
 @VM.instr(Operation.JNE)
 def jmp_ifne(vm, instr):
     value = vm.registers[vm.get_next_8()]
     if not vm._eqflag:
         vm.counter = value
-        
+
+
 @VM.instr(Operation.ALLOC)
 def mem_alloc(vm, instr):
     value = vm.registers[vm.get_next_8()]
     vm.memory.alloc(value)
-    
+
+
 @VM.instr(Operation.HLT)
 def hlt(vm, instr):
     raise HLT()

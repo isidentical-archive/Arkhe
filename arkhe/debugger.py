@@ -1,15 +1,16 @@
 from arkhe.controller import Arkhe
 from arkhe.lang.compiler import Parser, ParseError
 
+
 class ADB:
     def __init__(self):
         self.vm = Arkhe([])
         self.parse = Parser()
         self.history = []
-        
-    def run(self, ps1 = ">>> "):
+
+    def run(self, ps1=">>> "):
         print("ADB session started")
-        
+
         command = input(ps1).strip()
         while command != "q":
             if command == "h":
@@ -22,7 +23,7 @@ class ADB:
                 allrs = set(self.vm.registers.items())
                 useds = set(filter(lambda i: i[1], allrs))
                 frees = allrs - useds
-                
+
                 print("Register states:")
                 print(f"\tTotal: {len(allrs)}")
                 print(f"\tUseds: {len(useds)}")
@@ -41,10 +42,11 @@ class ADB:
                     self.vm.exc_instr()
                 except ParseError:
                     print("Last instruction couldn't parsed!")
-                
+
             self.history.append(command)
             command = input(ps1).strip()
-        
-if __name__ == '__main__':
+
+
+if __name__ == "__main__":
     adb = ADB()
     adb.run()
