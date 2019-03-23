@@ -32,6 +32,8 @@ class ADB:
             elif command.startswith("r") and command[1:].isnumeric():
                 reg = command[1:]
                 print(f"r{reg} = {self.vm.registers[int(reg)]}")
+            elif command == "m":
+                print(f"Allocated memory: {len(self.vm.memory)}")
             else:
                 try:
                     commands = self.parse(command)

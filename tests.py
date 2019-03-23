@@ -1,5 +1,5 @@
 import pytest
-from arkhe.arkhe import Arkhe, Registers, RegisterNotFound
+from arkhe.controller import Arkhe, Registers, RegisterNotFound
 
 def test_registers():
     registers = Registers(32)
@@ -169,3 +169,13 @@ def test_vm_jne():
     vm._eqflag = False
     vm.exc_instr()
     assert vm.counter == 7
+    
+def test_vm_alloc():
+    code = [16, 0, 0, 0]
+    vm = Arkhe(code)
+    vm.registers[0] = 16
+    vm.exc_instr()
+    assert len(vm.memory) == 16
+    vm.counter = 0
+    vm.exc_instr()
+    assert len(vm.memory) == 32

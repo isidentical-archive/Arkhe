@@ -26,6 +26,8 @@ class Operation(IntEnum):
     LE = 13
     JEQ = 14
     JNE = 15
+    ALLOC = 16
+    DEALLOC = 17
     NOP = 0xFFE
     HLT  = 0xFFF
 
@@ -103,7 +105,12 @@ def jmp_ifne(vm, instr):
     value = vm.registers[vm.get_next_8()]
     if not vm._eqflag:
         vm.counter = value
-                 
+        
+@VM.instr(Operation.ALLOC)
+def mem_alloc(vm, instr):
+    value = vm.registers[vm.get_next_8()]
+    vm.memory.alloc(value)
+    
 @VM.instr(Operation.HLT)
 def hlt(vm, instr):
     raise HLT()
