@@ -1,5 +1,6 @@
 import itertools
 from collections import UserDict, UserList
+from functools import  partial
 
 from arkhe.vm import VM, ArkheException, Instr, Operation
 
@@ -21,6 +22,11 @@ class Registers(UserDict):
 class Memory(UserList):
     def alloc(self, amount):
         self.data.extend(itertools.repeat(0, amount))
+    
+    def dealloc(self, amount, head):
+        p = partial(self.data.pop, 0 if head else -1)
+        for _ in range(amount):
+            p()
 
 
 class Arkhe:

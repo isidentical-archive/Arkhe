@@ -143,6 +143,10 @@ def mem_alloc(vm, instr):
     value = vm.registers[instr.get_8()]
     vm.memory.alloc(value)
 
+@VM.instr(Operation.DEALLOC)
+def mem_dealloc(vm, instr):
+    head = instr.get_8()
+    vm.memory.dealloc(vm.registers[instr.get_8()], head=head)
 
 @VM.instr(Operation.HLT)
 def hlt(vm, instr):

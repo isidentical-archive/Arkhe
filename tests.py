@@ -179,3 +179,11 @@ def test_vm_alloc():
     vm.counter = 0
     vm.exc_instr()
     assert len(vm.memory) == 32
+
+def test_vm_dealloc():
+    code = [17, 0, 0, 0]
+    vm = Arkhe(code)
+    vm.registers[0] = 16
+    vm.memory.alloc(36)
+    vm.exc_instr()
+    assert len(vm.memory) == 20
