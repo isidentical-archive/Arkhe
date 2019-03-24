@@ -60,17 +60,17 @@ def test_vm_jmpf():
             0xFFF, 0, 0, 0]
             
     vm = Arkhe(code)
-    vm.registers[0] = 2
+    vm.registers[0] = 4
     vm.exc_instr()
-    assert vm.counter == 4
+    assert vm.counter == 8 # 4 by first instr, 4 by jum
 
 def test_vm_jmpb():
     code = [0, 0, 0, 10, 7, 1, 0, 0]
     vm = Arkhe(code)
-    vm.registers[1] = 6
+    vm.registers[1] = 8
     vm.exc_instr()
-    vm.exc_instr()
-    assert vm.counter == 0
+    vm.exc_instr() # counter at 8
+    assert vm.counter == 0  
 
 def test_vm_eq():
     code = [8, 0, 1, 0, 8, 1, 2, 0]
@@ -161,14 +161,14 @@ def test_vm_jeq():
 def test_vm_jne():
     code = [15, 0, 0, 0, 0xFFE, 0, 0, 0, 0xFFE, 0, 0, 0]
     vm = Arkhe(code)
-    vm.registers[0] = 7
+    vm.registers[0] = 4
     vm._eqflag = True
     vm.exc_instr()
-    assert vm.counter == 2
+    assert vm.counter == 4
     vm.counter = 0
     vm._eqflag = False
     vm.exc_instr()
-    assert vm.counter == 7
+    assert vm.counter == 4
     
 def test_vm_alloc():
     code = [16, 0, 0, 0]

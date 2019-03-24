@@ -1,9 +1,11 @@
+from functools import partial
+from itertools import chain
+
 from lark import Transformer
 from lark.exceptions import ParseError
+
 from arkhe.lang.parser import get_parser
-from functools import partial
 from arkhe.vm import Operation
-from itertools import chain
 
 b16 = partial(int, base=16)
 

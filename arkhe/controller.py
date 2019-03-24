@@ -1,6 +1,7 @@
 import itertools
 from collections import UserDict, UserList
-from arkhe.vm import VM, Operation, ArkheException
+
+from arkhe.vm import VM, ArkheException, Instr, Operation
 
 
 class RegisterNotFound(ArkheException):
@@ -42,19 +43,10 @@ class Arkhe:
         return self.machine.dispatch(self.next_instr())
 
     def next_instr(self):
-        instr = Operation(self.code[self.counter])
-        self.counter += 1
-        return instr
-
-    def get_next_8(self):
-        res = self.code[self.counter]
-        self.counter += 1
-        return res
-
-    def get_next_16(self):
-        res = (self.code[self.counter] << 8) | self.code[self.counter + 1]
-        self.counter += 2
-        return res
+        operation = Operation(self.code[self.counter])
+        operands = self.code[self.counter + 1 : self.counter + 4]
+        self.counter += 4
+        return Instr(operation, operands)
 
     def __repr__(self):
         return f"Arkhe at {self.counter}"

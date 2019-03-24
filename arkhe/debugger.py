@@ -1,49 +1,96 @@
+from functools import partial
+from itertools import chain
+
 from arkhe.controller import Arkhe
-from arkhe.lang.compiler import Parser, ParseError
+from arkhe.lang.compiler import ParseError, Parser
+
+
+class Text:
+    HEADER = "\033[95m"
+    BLUE = "\033[94m"
+    GREEN = "\033[92m"
+    WARN = "\033[93m"
+    FAIL = "\033[91m"
+    ENDC = "\033[0m"
+    UNDERLINE = "\033[4m"
+
+    def __class_getitem__(cls, item):
+        def wrapper(text, start, end=cls.ENDC):
+            print(f"{start}{text}{end}")
+
+        if hasattr(cls, item.upper()):
+            return partial(wrapper, start=getattr(cls, item.upper()))
+        else:
+            raise AttributeError()
 
 
 class ADB:
     def __init__(self):
         self.vm = Arkhe([])
         self.parse = Parser()
-        self.history = []
 
     def run(self, ps1=">>> "):
-        print("ADB session started")
+        Text["header"]("ADB session started")
 
         command = input(ps1).strip()
         while command != "q":
-            if command == "h":
-                for n, cmd in enumerate(self.history):
-                    print(f"{n} -> {cmd}")
-            elif command == "c":
-                for cmd in self.vm.code:
-                    print(cmd)
-            elif command == "r":
+            if command == "code":
+                pos = self.vm.counter // 4
+                for n, cmdset in enumerate(zip(*[iter(self.vm.code)] * 4), 1):
+                    if n < pos:
+                        Text["green"](cmdset)
+                    elif n == pos:
+                        Text["underline"](cmdset)
+                    else:
+                        Text["blue"](cmdset)
+
+            elif command == "regs":
                 allrs = set(self.vm.registers.items())
                 useds = set(filter(lambda i: i[1], allrs))
                 frees = allrs - useds
 
                 print("Register states:")
-                print(f"\tTotal: {len(allrs)}")
-                print(f"\tUseds: {len(useds)}")
-                print(f"\tFree: {len(frees)}")
+                Text["blue"](f"\tTotal: {len(allrs)}")
+                Text["warn"](f"\tUseds: {str(len(useds)).zfill(len(f'{len(allrs)}'))}")
+                Text["green"](f"\tFrees: {len(frees)}")
                 for reg, val in useds:
                     print(f"r{reg} = {val}")
+
             elif command.startswith("r") and command[1:].isnumeric():
                 reg = command[1:]
                 print(f"r{reg} = {self.vm.registers[int(reg)]}")
-            elif command == "m":
-                print(f"Allocated memory: {len(self.vm.memory)}")
+
+            elif command == "mem":
+                total = len(self.vm.memory)
+                nonzero = len([0 for chunk in self.vm.memory if chunk])
+                zero = total - nonzero
+                Text["blue"](f"Allocated memory: {total}")
+                Text["warn"](f"Non-zero  memory: {nonzero}")
+                Text["green"](f"Free      memory: {zero}")
+
+            elif command == "counter":
+                Text["green"](f"Counter: {self.vm.counter}")
+
+            elif command == "reset":
+                self.vm = Arkhe([])  # or reset counter, code, eqflag, memory, registers
+
+            elif command.startswith("eval ") and command[5:].isnumeric():
+                for _ in range(int(command[5:])):
+                    self.vm.exc_instr()
             else:
                 try:
-                    commands = self.parse(command)
-                    self.vm.code.extend(commands)
-                    self.vm.exc_instr()
+                    if ";" in command:
+                        self.vm.code.extend(
+                            chain.from_iterable(
+                                self.parse(command) for command in command.split("; ")
+                            )
+                        )
+                    else:
+                        commands = self.parse(command)
+                        self.vm.code.extend(commands)
                 except ParseError:
-                    print("Last instruction couldn't parsed!")
+                    Text["fail"]("Last instruction couldn't parsed!")
 
-            self.history.append(command)
             command = input(ps1).strip()
 
 

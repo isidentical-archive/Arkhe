@@ -1,6 +1,7 @@
 import operator
-from enum import IntEnum
 from dataclasses import dataclass
+from enum import IntEnum
+from typing import List
 
 
 class ArkheException(Exception):
@@ -38,6 +39,22 @@ class Operation(IntEnum):
 @dataclass
 class Instr:
     operation: Operation
+    operands: List[int]
+
+    def __post_init__(self):
+        self.op = 0
+
+    def get_8(self):
+        res = self.operands[self.op]
+        self.op += 1
+        return res
+
+    def get_16(self):
+        return (self.get_8() << 8) | self.get_8()
+
+    def __hash__(self):
+        """unsafe_hash parameter has different functionality"""
+        return hash(id(self))
 
 
 class VM:
@@ -55,13 +72,13 @@ class VM:
         return wrapper
 
     def dispatch(self, instr):
-        return self.instrset.get(instr)(self.arkhe, instr)
+        return self.instrset.get(instr.operation)(self.arkhe, instr)
 
 
 @VM.instr(Operation.LOAD)
 def load(vm, instr):
-    target = vm.get_next_8()
-    vm.registers[target] = vm.get_next_16()
+    target = instr.get_8()
+    vm.registers[target] = instr.get_16()
 
 
 @VM.instr(Operation.ADD)
@@ -69,9 +86,9 @@ def load(vm, instr):
 @VM.instr(Operation.MUL)
 @VM.instr(Operation.TRUEDIV)
 def math(vm, instr):
-    operand1 = vm.registers[vm.get_next_8()]
-    operand2 = vm.registers[vm.get_next_8()]
-    vm.registers[vm.get_next_8()] = getattr(operator, instr.name.lower())(
+    operand1 = vm.registers[instr.get_8()]
+    operand2 = vm.registers[instr.get_8()]
+    vm.registers[instr.get_8()] = getattr(operator, instr.operation.name.lower())(
         operand1, operand2
     )
 
@@ -83,46 +100,47 @@ def math(vm, instr):
 @VM.instr(Operation.GT)
 @VM.instr(Operation.LT)
 def comparison(vm, instr):
-    operand1 = vm.registers[vm.get_next_8()]
-    operand2 = vm.registers[vm.get_next_8()]
-    vm._eqflag = getattr(operator, instr.name.lower())(operand1, operand2)
-    vm.get_next_8()
+    operand1 = vm.registers[instr.get_8()]
+    operand2 = vm.registers[instr.get_8()]
+    print(operand1, operand2, instr.operation.name.lower())
+    vm._eqflag = getattr(operator, instr.operation.name.lower())(operand1, operand2)
+    instr.get_8()
 
 
 @VM.instr(Operation.JMP)
 def jmp(vm, instr):
-    vm.counter = vm.registers[vm.get_next_8()]
+    vm.counter = vm.registers[instr.get_8()]
 
 
 @VM.instr(Operation.JMPF)
 def jmp_forward(vm, instr):
-    value = vm.registers[vm.get_next_8()]
+    value = vm.registers[instr.get_8()]
     vm.counter += value
 
 
 @VM.instr(Operation.JPMB)
 def jmp_backward(vm, instr):
-    value = vm.registers[vm.get_next_8()]
+    value = vm.registers[instr.get_8()]
     vm.counter -= value
 
 
 @VM.instr(Operation.JEQ)
 def jmp_ifeq(vm, instr):
-    value = vm.registers[vm.get_next_8()]
+    value = vm.registers[instr.get_8()]
     if vm._eqflag:
         vm.counter = value
 
 
 @VM.instr(Operation.JNE)
 def jmp_ifne(vm, instr):
-    value = vm.registers[vm.get_next_8()]
+    value = vm.registers[instr.get_8()]
     if not vm._eqflag:
         vm.counter = value
 
 
 @VM.instr(Operation.ALLOC)
 def mem_alloc(vm, instr):
-    value = vm.registers[vm.get_next_8()]
+    value = vm.registers[instr.get_8()]
     vm.memory.alloc(value)
 
 
