@@ -1,4 +1,6 @@
 # Arkhe
 Universal Virtual Machine
+## Installation
+
 ## Demo
-[![asciicast](https://asciinema.org/a/flMCof1p53OtNXoe2WYaXPHX0.svg)](https://asciinema.org/a/flMCof1p53OtNXoe2WYaXPHX0)
+[![asciicast](https://asciinema.org/a/ILB4AeuGsPpVspaCKnIziayiJ.svg)](https://asciinema.org/a/ILB4AeuGsPpVspaCKnIziayiJ)

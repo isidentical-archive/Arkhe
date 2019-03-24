@@ -19,7 +19,9 @@ class HLT(ArkheException):
     def __init__(self):
         super().__init__("Program stopped!")
 
-
+class InsufficientOperands(ArkheException):
+    pass
+    
 class Operation(IntEnum):
     LOAD = 0
     ADD = 1
@@ -57,7 +59,11 @@ class Instr:
             self.operation = Operation(self.operation)
 
     def get_8(self):
-        res = self.operands[self.op]
+        try:
+            res = self.operands[self.op]
+        except IndexError:
+            raise InsufficientOperands()
+            
         self.op += 1
         return res
 
