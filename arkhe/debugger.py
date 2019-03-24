@@ -101,9 +101,8 @@ class ADB:
                     else:
                         commands = self.parse(command)
                         self.vm.code.extend(commands)
-                except ParseError:
+                except ParseError as exc:
                     Text["fail"]("Last instruction couldn't parsed!")
-
 
 if __name__ == "__main__":
     adb = ADB()

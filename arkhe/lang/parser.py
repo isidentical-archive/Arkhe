@@ -7,7 +7,7 @@ GRAMMAR = textwrap.dedent("""
 start: instr+
 instr: OP OPERAND+
 
-OPERAND: HEXDIGIT~2
+OPERAND: HEXDIGIT~2..4
 
 %import common.HEXDIGIT
 %import common.CNAME -> OP

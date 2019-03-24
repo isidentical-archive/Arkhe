@@ -4,7 +4,7 @@ from io import StringIO
 from arkhe.controller import Arkhe, RegisterNotFound, Registers
 from arkhe.debugger import ADB
 from arkhe.utils import create_instr, divide_sequence
-from arkhe.vm import INSTR_TERM, Operation
+from arkhe.vm import INSTR_TERM, Operation, TypeTable
 
 
 def test_utils():
@@ -245,7 +245,12 @@ def test_vm_dealloc():
     vm.exc_instr()
     assert len(vm.memory) == 20
 
-
+def test_type_string():
+    code = create_instr("load", 0, 104, 101, 108, 108, 111, TypeTable.STR)
+    vm = Arkhe(code)
+    vm.exc_instr()
+    assert vm.registers[0] == "hello"
+    
 def test_debugger():
     stream = StringIO()
     adb = ADB(stream)
@@ -256,4 +261,3 @@ def test_debugger():
     assert adb.vm.registers[2] == 0
     adb.run_cmd("eval 1")
     assert adb.vm.registers[2] == 2000
-    raise

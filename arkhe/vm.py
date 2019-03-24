@@ -2,9 +2,11 @@
 Reserveds:
 0xFF{o} family reserved for VM
 0xFE{o} family reserved for no action & hlt instrs
+0xF{o} family reserved for loading const types
 """
 import operator
 from dataclasses import dataclass
+from contextlib import suppress
 from enum import IntEnum
 from typing import List
 
@@ -21,6 +23,10 @@ class HLT(ArkheException):
 
 class InsufficientOperands(ArkheException):
     pass
+
+class TypeTable(IntEnum):
+    INT = 0xF0
+    STR = 0xF1
     
 class Operation(IntEnum):
     LOAD = 0
@@ -96,7 +102,18 @@ class VM:
 @VM.instr(Operation.LOAD)
 def load(vm, instr):
     target = instr.get_8()
-    vm.registers[target] = instr.get_16()
+    try:
+        typed = TypeTable(instr.operands[-1])
+    except ValueError:
+        typed = TypeTable.INT
+    
+    if typed is TypeTable.INT:
+        value = instr.get_16()
+    elif typed is TypeTable.STR:
+        value = "".join(map(chr, instr.operands[1:-1]))
+    
+    vm.registers[target] = value
+    
 
 
 @VM.instr(Operation.ADD)
@@ -120,7 +137,6 @@ def math(vm, instr):
 def comparison(vm, instr):
     operand1 = vm.registers[instr.get_8()]
     operand2 = vm.registers[instr.get_8()]
-    print(operand1, operand2, instr.operation.name.lower())
     vm._eqflag = getattr(operator, instr.operation.name.lower())(operand1, operand2)
 
 
