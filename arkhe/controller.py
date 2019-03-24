@@ -18,6 +18,7 @@ class Registers(UserDict):
         self.data = dict(zip(range(amount), itertools.repeat(0, amount)))
 
     def __setitem__(self, register, value):
+        register = int(register)
         if self.get(register) is None:
             raise RegisterNotFound(f"{register}")
         return super().__setitem__(register, value)

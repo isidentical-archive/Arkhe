@@ -8,7 +8,7 @@ with open(current_dir / 'README.md', encoding='utf-8') as f:
 
 setup(
     name="arkhe",
-    version="0.2",
+    version="0.2.1",
     packages=find_packages(),
     author="BTaskaya",
     author_email="batuhanosmantaskaya@gmail.com",

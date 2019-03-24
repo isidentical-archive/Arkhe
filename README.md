@@ -3,6 +3,7 @@ Experimental Universal Virtual Machine (`pip install arkhe`) (`python -m arkhe`)
 ## Demo
 [![asciicast](https://asciinema.org/a/i5JBMXFlcXbyYHOb0AHNH9i0D.svg)](https://asciinema.org/a/i5JBMXFlcXbyYHOb0AHNH9i0D)
 [![asciicast](https://asciinema.org/a/SAkcA9kQyMRQNKAfi8SrThD5g.svg)](https://asciinema.org/a/SAkcA9kQyMRQNKAfi8SrThD5g)
+[![asciicast](https://asciinema.org/a/REkATQPrAqG6EBSPx0HgiiUBN.svg)](https://asciinema.org/a/REkATQPrAqG6EBSPx0HgiiUBN)
 
 ## Usage
 ### Type
