@@ -246,9 +246,10 @@ def test_vm_mem_dealloc():
     assert len(vm.memory) == 20
 
 def test_vm_mem_insert():
-    code = create_instr("insert", 16, 0)
+    code = create_instr("insert", 0, 1)
     vm = Arkhe(code)
-    vm.registers[0] = "hello"
+    vm.registers[0] = 16
+    vm.registers[1] = "hello"
     with pytest.raises(MemoryFault):
         vm.exc_instr()
     vm.memory.alloc(100)
@@ -257,15 +258,16 @@ def test_vm_mem_insert():
     assert vm.memory[16] == "hello"
     
 def test_vm_mem_read():
-    code = create_instr("read", 16, 0)
+    code = create_instr("read", 0, 1)
     vm = Arkhe(code)
+    vm.registers[0] = 16
     with pytest.raises(MemoryFault):
         vm.exc_instr()
     vm.memory.alloc(100)
     vm.memory[16] = "hello"
     vm.counter = 0
     vm.exc_instr()
-    assert vm.registers[0] == "hello"
+    assert vm.registers[1] == "hello"
     
 def test_type_string():
     code = create_instr("load", 0, 104, 101, 108, 108, 111, TypeTable.STR)
@@ -293,4 +295,3 @@ def test_debugger():
     assert adb.vm.registers[2] == 0
     adb.run_cmd("eval 1")
     assert adb.vm.registers[2] == 2000
-

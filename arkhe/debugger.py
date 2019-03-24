@@ -84,7 +84,8 @@ class ADB:
 
             elif command == "reset":
                 self.vm = Arkhe()  # or reset counter, code, eqflag, memory, registers
-
+                self.evaled = 0
+                
             elif command.startswith("eval ") and command[5:].isnumeric():
                 for _ in range(int(command[5:])):
                     self.vm.exc_instr()

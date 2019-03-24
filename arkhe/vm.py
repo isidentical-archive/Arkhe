@@ -193,7 +193,7 @@ def mem_dealloc(vm, instr):
 
 @VM.instr(Operation.INSERT)
 def mem_insert(vm, instr):
-    position = instr.get_8()
+    position = vm.registers[instr.get_8()]
     value = vm.registers[instr.get_8()]
     try:
         vm.memory[position] = value
@@ -203,7 +203,7 @@ def mem_insert(vm, instr):
 
 @VM.instr(Operation.READ)
 def mem_read(vm, instr):
-    position = instr.get_8()
+    position = vm.registers[instr.get_8()]
     try:
         vm.registers[instr.get_8()] = vm.memory[position]
     except IndexError:
