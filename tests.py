@@ -4,15 +4,15 @@ from io import StringIO
 from arkhe.controller import Arkhe, RegisterNotFound, Registers
 from arkhe.debugger import ADB
 from arkhe.utils import create_instr, divide_sequence
-from arkhe.vm import INSTR_TERM, Operation, TypeTable
+from arkhe.vm import INSTR_TERM, Operation, TypeTable, MemoryFault
 
 
-def test_utils():
+def test_utils_divideseq():
     data = [1, 2, 3, 0, 1, 2, 0, 1, 0, 1, 2, 3, 4, 5, 0]
     assert divide_sequence(data) == [[1, 2, 3], [1, 2], [1], [1, 2, 3, 4, 5]]
 
 
-def test_create_instr():
+def test_utils_create_instr():
     assert create_instr("load", 0, 1, 244) == [
         Operation.LOAD.value,
         0,
@@ -22,7 +22,7 @@ def test_create_instr():
     ]
 
 
-def test_registers():
+def test_register():
     registers = Registers(32)
     assert registers[0] == 0
 
@@ -46,7 +46,7 @@ def test_vm_load():
     assert vm.registers[0] == 100
 
 
-def test_vm_multiple_load():
+def test_vm_load_multiple():
     code = [*create_instr("load", 0, 3, 232), *create_instr("load", 1, 1, 244)]
 
     vm = Arkhe(code)
@@ -226,7 +226,7 @@ def test_vm_jeq():
     assert vm.counter == 3
 
 
-def test_vm_alloc():
+def test_vm_mem_alloc():
     code = create_instr("alloc", 0)
     vm = Arkhe(code)
     vm.registers[0] = 16
@@ -237,7 +237,7 @@ def test_vm_alloc():
     assert len(vm.memory) == 32
 
 
-def test_vm_dealloc():
+def test_vm_mem_dealloc():
     code = create_instr("dealloc", 0, 0)
     vm = Arkhe(code)
     vm.registers[0] = 16
@@ -245,6 +245,28 @@ def test_vm_dealloc():
     vm.exc_instr()
     assert len(vm.memory) == 20
 
+def test_vm_mem_insert():
+    code = create_instr("insert", 16, 0)
+    vm = Arkhe(code)
+    vm.registers[0] = "hello"
+    with pytest.raises(MemoryFault):
+        vm.exc_instr()
+    vm.memory.alloc(100)
+    vm.counter = 0
+    vm.exc_instr()
+    assert vm.memory[16] == "hello"
+    
+def test_vm_mem_read():
+    code = create_instr("read", 16, 0)
+    vm = Arkhe(code)
+    with pytest.raises(MemoryFault):
+        vm.exc_instr()
+    vm.memory.alloc(100)
+    vm.memory[16] = "hello"
+    vm.counter = 0
+    vm.exc_instr()
+    assert vm.registers[0] == "hello"
+    
 def test_type_string():
     code = create_instr("load", 0, 104, 101, 108, 108, 111, TypeTable.STR)
     vm = Arkhe(code)

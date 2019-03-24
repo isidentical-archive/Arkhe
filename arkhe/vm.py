@@ -5,8 +5,8 @@ Reserveds:
 0xF{o} family reserved for loading const types
 """
 import operator
-from dataclasses import dataclass
 from contextlib import suppress
+from dataclasses import dataclass
 from enum import IntEnum
 from typing import List
 
@@ -21,13 +21,20 @@ class HLT(ArkheException):
     def __init__(self):
         super().__init__("Program stopped!")
 
+
 class InsufficientOperands(ArkheException):
     pass
+
+
+class MemoryFault(ArkheException):
+    pass
+
 
 class TypeTable(IntEnum):
     INT = 0xF0
     STR = 0xF1
-    
+
+
 class Operation(IntEnum):
     LOAD = 0
     ADD = 1
@@ -47,6 +54,8 @@ class Operation(IntEnum):
     JNE = 15
     ALLOC = 16
     DEALLOC = 17
+    INSERT = 18
+    READ = 19
     NOP = 0xFEE
     HLT = 0xFEF
 
@@ -69,7 +78,7 @@ class Instr:
             res = self.operands[self.op]
         except IndexError:
             raise InsufficientOperands()
-            
+
         self.op += 1
         return res
 
@@ -106,14 +115,13 @@ def load(vm, instr):
         typed = TypeTable(instr.operands[-1])
     except ValueError:
         typed = TypeTable.INT
-    
+
     if typed is TypeTable.INT:
         value = instr.get_16()
     elif typed is TypeTable.STR:
         value = "".join(map(chr, instr.operands[1:-1]))
-    
+
     vm.registers[target] = value
-    
 
 
 @VM.instr(Operation.ADD)
@@ -181,6 +189,25 @@ def mem_alloc(vm, instr):
 def mem_dealloc(vm, instr):
     head = instr.get_8()
     vm.memory.dealloc(vm.registers[instr.get_8()], head=head)
+
+
+@VM.instr(Operation.INSERT)
+def mem_insert(vm, instr):
+    position = instr.get_8()
+    value = vm.registers[instr.get_8()]
+    try:
+        vm.memory[position] = value
+    except IndexError:
+        raise MemoryFault("Insert operation to not owned area!")
+
+
+@VM.instr(Operation.READ)
+def mem_read(vm, instr):
+    position = instr.get_8()
+    try:
+        vm.registers[instr.get_8()] = vm.memory[position]
+    except IndexError:
+        raise MemoryFault("Read operation to not owned area!")
 
 
 @VM.instr(Operation.NOP)

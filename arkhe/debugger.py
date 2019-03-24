@@ -104,6 +104,7 @@ class ADB:
                 except ParseError as exc:
                     Text["fail"]("Last instruction couldn't parsed!")
 
+
 if __name__ == "__main__":
     adb = ADB()
     adb.run()
