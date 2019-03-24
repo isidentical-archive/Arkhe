@@ -250,7 +250,17 @@ def test_type_string():
     vm = Arkhe(code)
     vm.exc_instr()
     assert vm.registers[0] == "hello"
-    
+    vm.code.extend(create_instr("load", 1, 32, 119, 111, 114, 108, 100, 33, 32, TypeTable.STR))
+    vm.exc_instr()
+    assert vm.registers[1] == " world! "
+    vm.code.extend(create_instr("add", 0, 1, 2))
+    vm.exc_instr()
+    assert vm.registers[2] == "hello world! "
+    vm.registers[5] = 5
+    vm.code.extend(create_instr("mul", 2, 5, 3))
+    vm.exc_instr()
+    assert vm.registers[3] == "hello world! hello world! hello world! hello world! hello world! "
+
 def test_debugger():
     stream = StringIO()
     adb = ADB(stream)
@@ -261,3 +271,4 @@ def test_debugger():
     assert adb.vm.registers[2] == 0
     adb.run_cmd("eval 1")
     assert adb.vm.registers[2] == 2000
+
