@@ -5,6 +5,7 @@ from lark import Transformer
 from lark.exceptions import ParseError
 
 from arkhe.lang.parser import get_parser
+from arkhe.utils import create_instr
 from arkhe.vm import Operation
 
 b16 = partial(int, base=16)
@@ -19,13 +20,10 @@ class Base10(Transformer):
         return list(chain.from_iterable(instrs))
 
     def instr(self, tokens):
-        op = getattr(Operation, tokens.pop(0).upper()).value
+        op = tokens.pop(0)
         operands = list(map(b16, tokens))
 
-        if len(operands) != 3:
-            raise InvalidInstrSize(f"Expected: 1+3, Got: 1+{len(operands)}")
-
-        return [op, *operands]
+        return create_instr(op, *operands)
 
 
 class Parser:

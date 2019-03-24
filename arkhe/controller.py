@@ -1,11 +1,15 @@
 import itertools
 from collections import UserDict, UserList
-from functools import  partial
+from functools import partial
 
-from arkhe.vm import VM, ArkheException, Instr, Operation
+from arkhe.vm import INSTR_TERM, VM, ArkheException, Instr, Operation
 
 
 class RegisterNotFound(ArkheException):
+    pass
+
+
+class InstrNotEnded(ArkheException):
     pass
 
 
@@ -22,7 +26,7 @@ class Registers(UserDict):
 class Memory(UserList):
     def alloc(self, amount):
         self.data.extend(itertools.repeat(0, amount))
-    
+
     def dealloc(self, amount, head):
         p = partial(self.data.pop, 0 if head else -1)
         for _ in range(amount):
@@ -30,8 +34,8 @@ class Memory(UserList):
 
 
 class Arkhe:
-    def __init__(self, code):
-        self.code = code
+    def __init__(self, code=None):
+        self.code = code or []
 
         self.registers = Registers(32)
         self.counter = 0
@@ -46,12 +50,23 @@ class Arkhe:
             self.exc_instr()
 
     def exc_instr(self):
-        return self.machine.dispatch(self.next_instr())
+        instr = self.next_instr()
+        return self.machine.dispatch(instr)
 
     def next_instr(self):
         operation = Operation(self.code[self.counter])
-        operands = self.code[self.counter + 1 : self.counter + 4]
-        self.counter += 4
+        self.counter += 1
+
+        operands = []
+        for item in self.code[self.counter :]:
+            if item != INSTR_TERM:
+                operands.append(item)
+            else:
+                break
+        else:
+            raise InstrNotEnded()
+
+        self.counter += len(operands) + 1
         return Instr(operation, operands)
 
     def __repr__(self):

@@ -1,5 +1,5 @@
 start: instr+
-instr: OP OPERAND OPERAND OPERAND
+instr: OP OPERAND+
 
 OPERAND: HEXDIGIT~2
 

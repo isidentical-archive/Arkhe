@@ -1,8 +1,12 @@
+import sys
+from contextlib import redirect_stdout
 from functools import partial
 from itertools import chain
 
 from arkhe.controller import Arkhe
 from arkhe.lang.compiler import ParseError, Parser
+from arkhe.utils import divide_sequence
+from arkhe.vm import INSTR_TERM, Instr
 
 
 class Text:
@@ -25,25 +29,32 @@ class Text:
 
 
 class ADB:
-    def __init__(self):
-        self.vm = Arkhe([])
+    def __init__(self, stdout=sys.stdout):
+        self.vm = Arkhe()
         self.parse = Parser()
+        self.stdout = stdout
+        self.evaled = 0
 
     def run(self, ps1=">>> "):
         Text["header"]("ADB session started")
 
         command = input(ps1).strip()
         while command != "q":
-            if command == "code":
-                pos = self.vm.counter // 4
-                for n, cmdset in enumerate(zip(*[iter(self.vm.code)] * 4), 1):
-                    if n < pos:
-                        Text["green"](cmdset)
-                    elif n == pos:
-                        Text["underline"](cmdset)
-                    else:
-                        Text["blue"](cmdset)
+            self.run_cmd(command)
+            command = input(ps1).strip()
 
+    def run_cmd(self, command, stdout=None):
+        with redirect_stdout(stdout or self.stdout):
+            if command == "code":
+                codesets = divide_sequence(self.vm.code, INSTR_TERM)
+                for n, codeset in enumerate(codesets, 1):
+                    codeset = Instr(codeset.pop(0), codeset)
+                    if n < self.evaled:
+                        Text["green"](f"{n}th instr (executed) -> {codeset}")
+                    elif n == self.evaled:
+                        Text["underline"](f"Last executed instr  -> {codeset}")
+                    else:
+                        Text["blue"](f"{n}th instr (pending)  -> {codeset}")
             elif command == "regs":
                 allrs = set(self.vm.registers.items())
                 useds = set(filter(lambda i: i[1], allrs))
@@ -72,11 +83,13 @@ class ADB:
                 Text["green"](f"Counter: {self.vm.counter}")
 
             elif command == "reset":
-                self.vm = Arkhe([])  # or reset counter, code, eqflag, memory, registers
+                self.vm = Arkhe()  # or reset counter, code, eqflag, memory, registers
 
             elif command.startswith("eval ") and command[5:].isnumeric():
                 for _ in range(int(command[5:])):
                     self.vm.exc_instr()
+
+                self.evaled += int(command[5:])
             else:
                 try:
                     if ";" in command:
@@ -90,8 +103,6 @@ class ADB:
                         self.vm.code.extend(commands)
                 except ParseError:
                     Text["fail"]("Last instruction couldn't parsed!")
-
-            command = input(ps1).strip()
 
 
 if __name__ == "__main__":

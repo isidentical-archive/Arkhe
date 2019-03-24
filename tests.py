@@ -1,42 +1,69 @@
 import pytest
-from arkhe.controller import Arkhe, Registers, RegisterNotFound
+
+from io import StringIO
+from arkhe.controller import Arkhe, RegisterNotFound, Registers
+from arkhe.debugger import ADB
+from arkhe.utils import create_instr, divide_sequence
+from arkhe.vm import INSTR_TERM, Operation
+
+
+def test_utils():
+    data = [1, 2, 3, 0, 1, 2, 0, 1, 0, 1, 2, 3, 4, 5, 0]
+    assert divide_sequence(data) == [[1, 2, 3], [1, 2], [1], [1, 2, 3, 4, 5]]
+
+
+def test_create_instr():
+    assert create_instr("load", 0, 1, 244) == [
+        Operation.LOAD.value,
+        0,
+        1,
+        244,
+        INSTR_TERM,
+    ]
+
 
 def test_registers():
     registers = Registers(32)
     assert registers[0] == 0
+
 
 def test_register_key_imm():
     registers = Registers(16)
     with pytest.raises(RegisterNotFound):
         registers[32] = 3
 
+
 def test_register_set():
     registers = Registers(16)
     registers[5] = 15
     assert registers[5] == 15
-    
+
+
 def test_vm_load():
-    code = [0, 0, 0, 100] # Load 100 to r0
+    code = create_instr("load", 0, 0, 100)
     vm = Arkhe(code)
     vm.eval()
     assert vm.registers[0] == 100
 
+
 def test_vm_multiple_load():
-    code = [0, 0, 3, 232, # Load 1k to r0
-            0, 1, 1, 244] # Load 500 to r1
+    code = [*create_instr("load", 0, 3, 232), *create_instr("load", 1, 1, 244)]
 
     vm = Arkhe(code)
     vm.eval()
     assert vm.registers[0] == 1000 and vm.registers[1] == 500
 
+
 def test_vm_math():
-    code = [0, 0, 3, 232, # r0 = 1000
-            0, 1, 1, 244, # r1 = 500
-            1, 0, 1, 2,   # r2 = r0 + r1 = 1500
-            2, 2, 1, 3,   # r3 = r2 - r1 = 1000
-            3, 1, 2, 4,   # r4 = r1 * r2 = 500 * 1500
-            4, 2, 3, 5]    # r5 = r2 / r3 = 1500 / 500 * 1500
-            
+    code = [
+        *create_instr("load", 0, 3, 232),
+        *create_instr("load", 1, 1, 244),
+        *create_instr("add", 0, 1, 2),
+        *create_instr("sub", 2, 1, 3),
+        *create_instr("mul", 1, 2, 4),
+        *create_instr("truediv", 2, 3, 5),
+    ]
+
     vm = Arkhe(code)
     vm.eval()
     assert (
@@ -47,131 +74,160 @@ def test_vm_math():
         and vm.registers[4] == 750_000
         and vm.registers[5] == 1.5
     )
-    
+
+
 def test_vm_jmp():
-    code = [5, 0, 0, 0]
+    code = create_instr("jmp", 0)
     vm = Arkhe(code)
-    vm.registers[0] = 4
+    vm.registers[0] = 0
     vm.exc_instr()
-    assert vm.counter == 4
+    assert vm.counter == 0
+
 
 def test_vm_jmpf():
-    code = [6, 0, 0, 0, 
-            0xFFF, 0, 0, 0]
-            
+    code = [*create_instr("jmpf", 0), *create_instr("nop")]
+
     vm = Arkhe(code)
     vm.registers[0] = 4
-    vm.exc_instr()
-    assert vm.counter == 8 # 4 by first instr, 4 by jum
-
-def test_vm_jmpb():
-    code = [0, 0, 0, 10, 7, 1, 0, 0]
-    vm = Arkhe(code)
-    vm.registers[1] = 8
-    vm.exc_instr()
-    vm.exc_instr() # counter at 8
-    assert vm.counter == 0  
-
-def test_vm_eq():
-    code = [8, 0, 1, 0, 8, 1, 2, 0]
-    vm = Arkhe(code)
-    vm.registers[0] = 5
-    vm.registers[1] = 5
-    vm.exc_instr()
-    assert vm._eqflag
-    vm.registers[2] = 10
-    vm.exc_instr()
-    assert not vm._eqflag
-
-def test_vm_ne():
-    code = [9, 0, 1, 0, 9, 1, 2, 0]
-    vm = Arkhe(code)
-    vm.registers[0] = 5
-    vm.registers[1] = 5
-    vm.exc_instr()
-    assert not vm._eqflag
-    vm.registers[2] = 10
-    vm.exc_instr()
-    assert vm._eqflag
-
-def test_vm_gt():
-    code = [10, 0, 1, 0, 10, 1, 2, 0, 10, 1, 3, 0]
-    vm = Arkhe(code)
-    vm.registers[0] = 5
-    vm.registers[1] = 5
-    vm.exc_instr()
-    assert not vm._eqflag
-    vm.registers[2] = 10
-    vm.exc_instr()
-    assert not vm._eqflag
-    vm.registers[3] = 4
-    vm.exc_instr()
-    assert vm._eqflag
-
-def test_vm_lt():
-    code = [11, 0, 1, 0, 11, 1, 2, 0, 11, 1, 3, 0]
-    vm = Arkhe(code)
-    vm.registers[0] = 5
-    vm.registers[1] = 5
-    vm.exc_instr()
-    assert not vm._eqflag
-    vm.registers[2] = 10
-    vm.exc_instr()
-    assert vm._eqflag
-    vm.registers[3] = 4
-    vm.exc_instr()
-    assert not vm._eqflag
-
-def test_vm_ge():
-    code = [12, 0, 1, 0, 12, 1, 2, 0, 12, 1, 3, 0]
-    vm = Arkhe(code)
-    vm.registers[0] = 5
-    vm.registers[1] = 5
-    vm.exc_instr()
-    assert vm._eqflag
-    vm.registers[2] = 10
-    vm.exc_instr()
-    assert not vm._eqflag
-    vm.registers[3] = 4
-    vm.exc_instr()
-    assert vm._eqflag
-
-def test_vm_le():
-    code = [13, 0, 1, 0, 13, 1, 2, 0, 13, 1, 3, 0]
-    vm = Arkhe(code)
-    vm.registers[0] = 5
-    vm.registers[1] = 5
-    vm.exc_instr()
-    assert vm._eqflag
-    vm.registers[2] = 10
-    vm.exc_instr()
-    assert vm._eqflag
-    vm.registers[3] = 4
-    vm.exc_instr()
-    assert not vm._eqflag
-
-def test_vm_jeq():
-    code = [14, 0, 0, 0, 0xFFE, 0, 0, 0, 0xFFE, 0, 0, 0]
-    vm = Arkhe(code)
-    vm.registers[0] = 7
-    vm._eqflag = True
-    vm.exc_instr()
+    vm.exc_instr()  # counter at 3
     assert vm.counter == 7
 
-def test_vm_jne():
-    code = [15, 0, 0, 0, 0xFFE, 0, 0, 0, 0xFFE, 0, 0, 0]
+
+def test_vm_jmpb():
+    code = [*create_instr("jmpb", 0), *create_instr("nop")]
+
     vm = Arkhe(code)
-    vm.registers[0] = 4
+    vm.registers[0] = 3
+    vm.exc_instr()  # counter at 3
+    assert vm.counter == 0
+
+
+def test_vm_comp_eq():
+    code = [*create_instr("eq", 0, 1), *create_instr("eq", 1, 2)]
+    vm = Arkhe(code)
+    vm.registers[0] = 5
+    vm.registers[1] = 5
+    vm.exc_instr()
+    assert vm._eqflag
+    vm.registers[2] = 10
+    vm.exc_instr()
+    assert not vm._eqflag
+
+
+def test_vm_comp_ne():
+    code = [*create_instr("ne", 0, 1), *create_instr("ne", 1, 2)]
+    vm = Arkhe(code)
+    vm.registers[0] = 5
+    vm.registers[1] = 5
+    vm.exc_instr()
+    assert not vm._eqflag
+    vm.registers[2] = 10
+    vm.exc_instr()
+    assert vm._eqflag
+
+
+def test_vm_comp_gt():
+    code = [
+        *create_instr("gt", 0, 1),
+        *create_instr("gt", 1, 2),
+        *create_instr("gt", 1, 3),
+    ]
+    vm = Arkhe(code)
+    vm.registers[0] = 5
+    vm.registers[1] = 5
+    vm.exc_instr()
+    assert not vm._eqflag
+    vm.registers[2] = 10
+    vm.exc_instr()
+    assert not vm._eqflag
+    vm.registers[3] = 4
+    vm.exc_instr()
+    assert vm._eqflag
+
+
+def test_vm_comp_lt():
+    code = [
+        *create_instr("lt", 0, 1),
+        *create_instr("lt", 1, 2),
+        *create_instr("lt", 1, 3),
+    ]
+    vm = Arkhe(code)
+    vm.registers[0] = 5
+    vm.registers[1] = 5
+    vm.exc_instr()
+    assert not vm._eqflag
+    vm.registers[2] = 10
+    vm.exc_instr()
+    assert vm._eqflag
+    vm.registers[3] = 4
+    vm.exc_instr()
+    assert not vm._eqflag
+
+
+def test_vm_comp_ge():
+    code = [
+        *create_instr("ge", 0, 1),
+        *create_instr("ge", 1, 2),
+        *create_instr("ge", 1, 3),
+    ]
+    vm = Arkhe(code)
+    vm.registers[0] = 5
+    vm.registers[1] = 5
+    vm.exc_instr()
+    assert vm._eqflag
+    vm.registers[2] = 10
+    vm.exc_instr()
+    assert not vm._eqflag
+    vm.registers[3] = 4
+    vm.exc_instr()
+    assert vm._eqflag
+
+
+def test_vm_comp_le():
+    code = [
+        *create_instr("le", 0, 1),
+        *create_instr("le", 1, 2),
+        *create_instr("le", 1, 3),
+    ]
+    vm = Arkhe(code)
+    vm.registers[0] = 5
+    vm.registers[1] = 5
+    vm.exc_instr()
+    assert vm._eqflag
+    vm.registers[2] = 10
+    vm.exc_instr()
+    assert vm._eqflag
+    vm.registers[3] = 4
+    vm.exc_instr()
+    assert not vm._eqflag
+
+
+def test_vm_jeq():
+    code = [*create_instr("jeq", 0)]
+    vm = Arkhe(code)
+    vm.registers[0] = 0
     vm._eqflag = True
     vm.exc_instr()
-    assert vm.counter == 4
-    vm.counter = 0
+    assert vm.counter == 0
     vm._eqflag = False
     vm.exc_instr()
-    assert vm.counter == 4
-    
+    assert vm.counter == 3
+
+
+def test_vm_jeq():
+    code = [*create_instr("jne", 0)]
+    vm = Arkhe(code)
+    vm.registers[0] = 0
+    vm._eqflag = False
+    vm.exc_instr()
+    assert vm.counter == 0
+    vm._eqflag = True
+    vm.exc_instr()
+    assert vm.counter == 3
+
+
 def test_vm_alloc():
-    code = [16, 0, 0, 0]
+    code = create_instr("alloc", 0)
     vm = Arkhe(code)
     vm.registers[0] = 16
     vm.exc_instr()
@@ -180,10 +236,24 @@ def test_vm_alloc():
     vm.exc_instr()
     assert len(vm.memory) == 32
 
+
 def test_vm_dealloc():
-    code = [17, 0, 0, 0]
+    code = create_instr("dealloc", 0, 0)
     vm = Arkhe(code)
     vm.registers[0] = 16
     vm.memory.alloc(36)
     vm.exc_instr()
     assert len(vm.memory) == 20
+
+
+def test_debugger():
+    stream = StringIO()
+    adb = ADB(stream)
+    adb.run_cmd("LOAD 00 00 04; LOAD 01 01 F4; MUL 00 01 02")
+    adb.run_cmd("eval 2")
+    assert adb.vm.counter == 10
+    assert adb.vm.registers[0] == 4 and adb.vm.registers[1] == 500
+    assert adb.vm.registers[2] == 0
+    adb.run_cmd("eval 1")
+    assert adb.vm.registers[2] == 2000
+    raise

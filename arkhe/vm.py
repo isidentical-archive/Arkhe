@@ -1,7 +1,14 @@
+"""
+Reserveds:
+0xFF{o} family reserved for VM
+0xFE{o} family reserved for no action & hlt instrs
+"""
 import operator
 from dataclasses import dataclass
 from enum import IntEnum
 from typing import List
+
+INSTR_TERM = 0xFFF
 
 
 class ArkheException(Exception):
@@ -21,7 +28,7 @@ class Operation(IntEnum):
     TRUEDIV = 4
     JMP = 5
     JMPF = 6
-    JPMB = 7
+    JMPB = 7
     EQ = 8
     NE = 9
     GT = 10
@@ -32,8 +39,11 @@ class Operation(IntEnum):
     JNE = 15
     ALLOC = 16
     DEALLOC = 17
-    NOP = 0xFFE
-    HLT = 0xFFF
+    NOP = 0xFEE
+    HLT = 0xFEF
+
+    def __repr__(self):
+        return self.name.capitalize().ljust(7)
 
 
 @dataclass
@@ -43,6 +53,8 @@ class Instr:
 
     def __post_init__(self):
         self.op = 0
+        if not isinstance(self.operation, Operation):
+            self.operation = Operation(self.operation)
 
     def get_8(self):
         res = self.operands[self.op]
@@ -104,7 +116,6 @@ def comparison(vm, instr):
     operand2 = vm.registers[instr.get_8()]
     print(operand1, operand2, instr.operation.name.lower())
     vm._eqflag = getattr(operator, instr.operation.name.lower())(operand1, operand2)
-    instr.get_8()
 
 
 @VM.instr(Operation.JMP)
@@ -118,7 +129,7 @@ def jmp_forward(vm, instr):
     vm.counter += value
 
 
-@VM.instr(Operation.JPMB)
+@VM.instr(Operation.JMPB)
 def jmp_backward(vm, instr):
     value = vm.registers[instr.get_8()]
     vm.counter -= value
@@ -143,10 +154,17 @@ def mem_alloc(vm, instr):
     value = vm.registers[instr.get_8()]
     vm.memory.alloc(value)
 
+
 @VM.instr(Operation.DEALLOC)
 def mem_dealloc(vm, instr):
     head = instr.get_8()
     vm.memory.dealloc(vm.registers[instr.get_8()], head=head)
+
+
+@VM.instr(Operation.NOP)
+def nop(vm, instr):
+    pass
+
 
 @VM.instr(Operation.HLT)
 def hlt(vm, instr):
