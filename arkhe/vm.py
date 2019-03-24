@@ -2,7 +2,7 @@
 Reserveds:
 0xFF{o} family reserved for VM
 0xFE{o} family reserved for no action & hlt instrs
-0xF{o} family reserved for loading const types
+0xFD{o} family reserved for loading const types
 """
 import operator
 from contextlib import suppress
@@ -29,11 +29,14 @@ class InsufficientOperands(ArkheException):
 class MemoryFault(ArkheException):
     pass
 
+class UnknownSymbol(ArkheException):
+    pass
 
 class TypeTable(IntEnum):
-    INT = 0xF0
-    STR = 0xF1
-
+    INT = 0xFD0
+    STR = 0xFD1
+    
+    
 
 class Operation(IntEnum):
     LOAD = 0
@@ -56,6 +59,8 @@ class Operation(IntEnum):
     DEALLOC = 17
     INSERT = 18
     READ = 19
+    SYMSET = 20
+    SYMREAD = 21
     NOP = 0xFEE
     HLT = 0xFEF
 
@@ -115,7 +120,7 @@ def load(vm, instr):
         typed = TypeTable(instr.operands[-1])
     except ValueError:
         typed = TypeTable.INT
-
+    
     if typed is TypeTable.INT:
         value = instr.get_16()
     elif typed is TypeTable.STR:
@@ -209,7 +214,20 @@ def mem_read(vm, instr):
     except IndexError:
         raise MemoryFault("Read operation to not owned area!")
 
+@VM.instr(Operation.SYMSET)
+def sym_set(vm, instr):
+    name = vm.registers[instr.get_8()]
+    value = vm.registers[instr.get_8()]
+    vm.symtable[name] = value
 
+@VM.instr(Operation.SYMREAD)
+def sym_read(vm, instr):
+    name = vm.registers[instr.get_8()]
+    try:
+        vm.registers[instr.get_8()] = vm.symtable[name]
+    except KeyError:
+        raise UnknownSymbol(f"{name}")
+        
 @VM.instr(Operation.NOP)
 def nop(vm, instr):
     pass

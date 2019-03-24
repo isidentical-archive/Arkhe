@@ -268,6 +268,22 @@ def test_vm_mem_read():
     vm.counter = 0
     vm.exc_instr()
     assert vm.registers[1] == "hello"
+
+def test_vm_sym_set():
+    code = create_instr("symset", 0, 1)
+    vm = Arkhe(code)
+    vm.registers[0] = "age"
+    vm.registers[1] = 15
+    vm.exc_instr()
+    assert vm.symtable["age"] == 15
+
+def test_vm_sym_read():
+    code = create_instr("symread", 0, 1)
+    vm = Arkhe(code)
+    vm.symtable["age"] = 15
+    vm.registers[0] = "age"
+    vm.exc_instr()
+    assert vm.registers[1] == 15
     
 def test_type_string():
     code = create_instr("load", 0, 104, 101, 108, 108, 111, TypeTable.STR)

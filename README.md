@@ -76,6 +76,12 @@ ALLOC: Allocates memory amount of R1
 DEALLOC: Deallocates memory amount of R1 from Head (1) or Tail (0)
 INSERT: Insert r2's value to memory. r1 points to segment for insertment
 READ: Read value from memory and set it to r2. r1 points to segment for read operation.
-
+### Symboling
+```
+SYMSET R1 R2
+SYMREAD R1 R2
+```
+SYMSET: Updates record on symtable with `k:v` pair of `R1:R2`
+SYMREAD: Reads symtable record with `key` as R1 and loads value to `R2`
 ### NOP / HLT
 NOP does nothing, HLT raises `arkhe.vm.HLT` exception.
