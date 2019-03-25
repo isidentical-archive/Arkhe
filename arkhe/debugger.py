@@ -88,7 +88,12 @@ class ADB:
                 Text["blue"](f"Allocated memory: {total}")
                 Text["warn"](f"Non-zero  memory: {nonzero}")
                 Text["green"](f"Free      memory: {zero}")
-
+            elif command == "eq":
+                if self.vm._eqflag:
+                    Text["green"]("Equality Flag: True")
+                else:
+                    Text["warn"]("Equality Flag: False")
+                    
             elif command == "counter":
                 Text["green"](f"Counter: {self.vm.counter}")
 
