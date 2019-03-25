@@ -3,7 +3,9 @@ Reserveds:
 0xFF{o} family reserved for VM
 0xFE{o} family reserved for no action & hlt instrs
 0xFD{o} family reserved for loading const types
+0xFC{o} family reserved for c-bindings & system calls
 """
+import ctypes  # Goodbye multi-implementation compability
 import operator
 from contextlib import suppress
 from dataclasses import dataclass
@@ -11,6 +13,7 @@ from enum import IntEnum
 from typing import List
 
 INSTR_TERM = 0xFFF
+libc = ctypes.CDLL(None)
 
 
 class ArkheException(Exception):
@@ -29,14 +32,16 @@ class InsufficientOperands(ArkheException):
 class MemoryFault(ArkheException):
     pass
 
+
 class UnknownSymbol(ArkheException):
     pass
+
 
 class TypeTable(IntEnum):
     INT = 0xFD0
     STR = 0xFD1
-    
-    
+    BYT = 0xFD2
+
 
 class Operation(IntEnum):
     LOAD = 0
@@ -61,6 +66,7 @@ class Operation(IntEnum):
     READ = 19
     SYMSET = 20
     SYMREAD = 21
+    CCALL = 0xFCF
     NOP = 0xFEE
     HLT = 0xFEF
 
@@ -120,11 +126,13 @@ def load(vm, instr):
         typed = TypeTable(instr.operands[-1])
     except ValueError:
         typed = TypeTable.INT
-    
+
     if typed is TypeTable.INT:
         value = instr.get_16()
     elif typed is TypeTable.STR:
         value = "".join(map(chr, instr.operands[1:-1]))
+    elif typed is TypeTable.BYT:
+        value = bytes("".join(map(chr, instr.operands[1:-1])), "utf8")
 
     vm.registers[target] = value
 
@@ -214,11 +222,13 @@ def mem_read(vm, instr):
     except IndexError:
         raise MemoryFault("Read operation to not owned area!")
 
+
 @VM.instr(Operation.SYMSET)
 def sym_set(vm, instr):
     name = vm.registers[instr.get_8()]
     value = vm.registers[instr.get_8()]
     vm.symtable[name] = value
+
 
 @VM.instr(Operation.SYMREAD)
 def sym_read(vm, instr):
@@ -227,7 +237,15 @@ def sym_read(vm, instr):
         vm.registers[instr.get_8()] = vm.symtable[name]
     except KeyError:
         raise UnknownSymbol(f"{name}")
-        
+
+
+@VM.instr(Operation.CCALL)
+def ccall(vm, instr):
+    operation = vm.registers[instr.get_8()]
+    args = [vm.registers[value] for value in instr.operands[1:-1]]
+    vm.registers[instr.get_8()] = getattr(libc, operation)(*args)
+
+
 @VM.instr(Operation.NOP)
 def nop(vm, instr):
     pass

@@ -1,3 +1,4 @@
+import os
 import pytest
 
 from io import StringIO
@@ -5,7 +6,6 @@ from arkhe.controller import Arkhe, RegisterNotFound, Registers
 from arkhe.debugger import ADB
 from arkhe.utils import create_instr, divide_sequence
 from arkhe.vm import INSTR_TERM, Operation, TypeTable, MemoryFault
-
 
 def test_utils_divideseq():
     data = [1, 2, 3, 0, 1, 2, 0, 1, 0, 1, 2, 3, 4, 5, 0]
@@ -300,6 +300,19 @@ def test_type_string():
     vm.code.extend(create_instr("mul", 2, 5, 3))
     vm.exc_instr()
     assert vm.registers[3] == "hello world! hello world! hello world! hello world! hello world! "
+
+def test_type_bytes():
+    code = create_instr("load", 0, 104, 101, 108, 108, 111, TypeTable.BYT)
+    vm = Arkhe(code)
+    vm.exc_instr()
+    assert vm.registers[0] == b"hello"
+    
+def test_ext_libc():
+    code = create_instr("ccall", 0, 1)
+    vm = Arkhe(code)
+    vm.registers[0] = "getpid"
+    vm.exc_instr()
+    assert vm.registers[1] == os.getpid()
 
 def test_debugger():
     stream = StringIO()

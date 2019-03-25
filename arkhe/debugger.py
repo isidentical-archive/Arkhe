@@ -25,13 +25,13 @@ class Text:
                 print(f"{start}{text}{end}")
             else:
                 return f"{start}{text}{end}"
-        
-        if item.endswith('_p'):
+
+        if item.endswith("_p"):
             p = False
-            item = item.replace('_p', '')
+            item = item.replace("_p", "")
         else:
             p = True
-            
+
         if hasattr(cls, item.upper()):
             return partial(wrapper, start=getattr(cls, item.upper()), p=p)
         else:
@@ -91,25 +91,29 @@ class ADB:
 
             elif command == "counter":
                 Text["green"](f"Counter: {self.vm.counter}")
-            
+
             elif command == "symtable":
                 for key, value in self.vm.symtable.items():
                     print(f"{Text['green_p'](key)}: {Text['blue_p'](value)}")
-            
+
             elif "=" in command and command.startswith("sym"):
-                target, value = [item.strip() for item in command.replace("sym ", "").split("=")]
+                target, value = [
+                    item.strip() for item in command.replace("sym ", "").split("=")
+                ]
                 value = ast.literal_eval(value)
                 self.vm.symtable[target] = value
 
             elif "=" in command and command.startswith("r"):
-                target, value = [item.strip() for item in command.replace("r", "").split("=")]
+                target, value = [
+                    item.strip() for item in command.replace("r", "").split("=")
+                ]
                 value = ast.literal_eval(value)
                 self.vm.registers[target] = value
-            
+
             elif command == "reset":
                 self.vm = Arkhe()  # or reset counter, code, eqflag, memory, registers
                 self.evaled = 0
-            
+
             elif command.startswith("eval ") and command[5:].isnumeric():
                 for _ in range(int(command[5:])):
                     self.vm.exc_instr()

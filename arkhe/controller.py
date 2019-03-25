@@ -23,9 +23,11 @@ class Registers(UserDict):
             raise RegisterNotFound(f"{register}")
         return super().__setitem__(register, value)
 
+
 class Symtable(UserDict):
     pass
-    
+
+
 class Memory(UserList):
     def alloc(self, amount):
         self.data.extend(itertools.repeat(0, amount))
@@ -44,10 +46,9 @@ class Arkhe:
         self.memory = Memory()
         self.symtable = Symtable()
         self.machine = VM(self)
-        
+
         self.counter = 0
         self._eqflag = False
-
 
     def eval(self):
         eta = len(self.code)
