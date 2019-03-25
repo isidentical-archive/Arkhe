@@ -258,6 +258,7 @@ def sym_read(vm, instr):
 def ccall(vm, instr):
     operation = vm.registers[instr.get_8()]
     args = [vm.registers[value] for value in instr.operands[1:-1]]
+    args = [bytes(arg, 'utf8') for arg in args if isinstance(arg, str)] # Unicode to byte
     vm.registers[instr.get_8()] = getattr(libc, operation)(*args)
 
 
