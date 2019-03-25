@@ -80,7 +80,6 @@ class Operation(IntEnum):
 class Instr:
     operation: Operation
     operands: List[int]
-
     def __post_init__(self):
         self.op = 0
         if not isinstance(self.operation, Operation):

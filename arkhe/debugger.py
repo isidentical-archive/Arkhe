@@ -1,5 +1,6 @@
 import ast
 import sys
+from copy import copy
 from contextlib import redirect_stdout
 from functools import partial
 from itertools import chain
@@ -43,7 +44,6 @@ class ADB:
         self.vm = Arkhe()
         self.parse = Parser()
         self.stdout = stdout
-        self.evaled = 0
 
     def run(self, ps1=">>> "):
         Text["header"]("ADB session started")
@@ -56,15 +56,30 @@ class ADB:
     def run_cmd(self, command, stdout=None):
         with redirect_stdout(stdout or self.stdout):
             if command == "code":
-                codesets = divide_sequence(self.vm.code, INSTR_TERM)
+                code = copy(self.vm.code)
+                code.insert(self.vm.counter, 'SIGN')
+                codesets = divide_sequence(code, INSTR_TERM)
+                try:
+                    current, = filter(lambda sequence: 'SIGN' in sequence, codesets)
+                    evaled = codesets.index(current)
+                    codesets[evaled].remove('SIGN')
+                    unknown = False
+                except ValueError:
+                    unknown = True
+                    
                 for n, codeset in enumerate(codesets, 1):
                     codeset = Instr(codeset.pop(0), codeset)
-                    if n < self.evaled:
-                        Text["green"](f"{n}th instr (executed) -> {codeset}")
-                    elif n == self.evaled:
-                        Text["underline"](f"Last executed instr  -> {codeset}")
+                    if unknown:
+                        print(f"{n}th instr (state unknown)  -> {codeset}")
+                        continue
+                        
+                    if n < evaled:
+                        Text["green"](f"{n}th instr (executed)       -> {codeset}")
+                    elif n == evaled:
+                        Text["green"](f"{n}th instr (last executed)  -> {codeset}")
                     else:
-                        Text["blue"](f"{n}th instr (pending)  -> {codeset}")
+                        Text["blue"](f"{n}th instr (pending)        -> {codeset}")
+                        
             elif command == "regs":
                 allrs = set(self.vm.registers.items())
                 useds = set(filter(lambda i: i[1], allrs))
@@ -88,6 +103,7 @@ class ADB:
                 Text["blue"](f"Allocated memory: {total}")
                 Text["warn"](f"Non-zero  memory: {nonzero}")
                 Text["green"](f"Free      memory: {zero}")
+                
             elif command == "eq":
                 if self.vm._eqflag:
                     Text["green"]("Equality Flag: True")
@@ -117,13 +133,11 @@ class ADB:
 
             elif command == "reset":
                 self.vm = Arkhe()  # or reset counter, code, eqflag, memory, registers
-                self.evaled = 0
 
             elif command.startswith("eval ") and command[5:].isnumeric():
                 for _ in range(int(command[5:])):
                     self.vm.exc_instr()
 
-                self.evaled += int(command[5:])
             else:
                 try:
                     if ";" in command:
