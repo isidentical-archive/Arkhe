@@ -60,12 +60,14 @@ class Operation(IntEnum):
     LE = 13
     JEQ = 14
     JNE = 15
-    ALLOC = 16
-    DEALLOC = 17
-    INSERT = 18
-    READ = 19
-    SYMSET = 20
-    SYMREAD = 21
+    JFE = 16
+    JFN = 17
+    ALLOC = 18
+    DEALLOC = 19
+    INSERT = 20
+    READ = 21
+    SYMSET = 22
+    SYMREAD = 23
     CCALL = 0xFCF
     NOP = 0xFEE
     HLT = 0xFEF
@@ -192,6 +194,19 @@ def jmp_ifne(vm, instr):
         vm.counter = value
 
 
+@VM.instr(Operation.JFE)
+def jmpf_ifeq(vm, instr):
+    value = vm.registers[instr.get_8()]
+    if vm._eqflag:
+        vm.counter += value
+
+
+@VM.instr(Operation.JFN)
+def jmpf_ifne(vm, instr):
+    value = vm.registers[instr.get_8()]
+    if not vm._eqflag:
+        vm.counter += value
+        
 @VM.instr(Operation.ALLOC)
 def mem_alloc(vm, instr):
     value = vm.registers[instr.get_8()]

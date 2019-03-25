@@ -214,7 +214,7 @@ def test_vm_jeq():
     assert vm.counter == 3
 
 
-def test_vm_jeq():
+def test_vm_jne():
     code = [*create_instr("jne", 0)]
     vm = Arkhe(code)
     vm.registers[0] = 0
@@ -225,7 +225,23 @@ def test_vm_jeq():
     vm.exc_instr()
     assert vm.counter == 3
 
+def test_vm_jfe():
+    code = [*create_instr("jfe", 0)]
+    vm = Arkhe(code)
+    vm.registers[0] = 20
+    vm._eqflag = True
+    vm.exc_instr()
+    assert vm.counter == 23
 
+
+def test_vm_jfn():
+    code = [*create_instr("jfn", 0)]
+    vm = Arkhe(code)
+    vm.registers[0] = 20
+    vm._eqflag = False
+    vm.exc_instr()
+    assert vm.counter == 23
+    
 def test_vm_mem_alloc():
     code = create_instr("alloc", 0)
     vm = Arkhe(code)
